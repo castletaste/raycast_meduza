@@ -1,9 +1,10 @@
-import { ActionPanel, Action, List, showToast, Toast } from "@raycast/api";
+import { ActionPanel, Action, List, showToast, Toast, Cache, getPreferenceValues } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { format } from "timeago.js";
 import Parser from "rss-parser";
 
 const parser = new Parser();
+const cache = new Cache();
 
 interface FeedItem {
   title: string;
@@ -12,6 +13,9 @@ interface FeedItem {
   icon: string;
 }
 
+interface Preferences {
+  feedUrl: string;
+}
 
 // Функция для форматирования времени
 function formatTimeAgo(dateString: string): string {
@@ -24,19 +28,37 @@ export default function Command() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchFeed('https://meduza.io/rss/all');
-  });
+    fetchFeed();
+  }, []);
 
-  async function fetchFeed(url: string) {
+
+  async function fetchFeed() {
     setLoading(true);
+
+    const feedUrl = "https://meduza.io/rss/all"
+
     try {
-      const feed = await parser.parseURL(url);
-      setItems(feed.items.map((item) => ({
+      // Пытаемся получить данные из кэша
+      const cachedData = cache.get("feedItems");
+      if (cachedData) {
+        setItems(JSON.parse(cachedData));
+        setLoading(false);
+      }
+
+      // Загружаем свежие данные
+      const feed = await parser.parseURL(feedUrl);
+      const newItems = feed.items.map((item) => ({
         icon: item.icon || "icon.png",
         title: item.title || "",
         link: item.link || "",
         pubDate: item.pubDate || "",
-      })));
+      }));
+
+      setItems(newItems);
+
+      showToast(Toast.Style.Success, "Updated feed");
+      // Кэшируем новые данные
+      cache.set("feedItems", JSON.stringify(newItems)); // Кэш на 5 минут
     } catch (error) {
       console.error(error);
       showToast(Toast.Style.Failure, "Failed to fetch feed");
@@ -45,15 +67,21 @@ export default function Command() {
     }
   }
 
-
   return (
-    <List isLoading={loading}>
+    <List
+      isLoading={loading}
+      searchBarPlaceholder="Search articles..."
+      actions={
+        <ActionPanel>
+          <Action title="Refresh" onAction={fetchFeed} />
+        </ActionPanel>
+      }
+    >
       {items.map((item) => (
         <List.Item
           key={item.link}
           icon={item.icon}
           title={item.title}
-          // subtitle={шit
           accessories={[{ text: formatTimeAgo(item.pubDate) }]}
           actions={
             <ActionPanel>
