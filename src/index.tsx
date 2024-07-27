@@ -22,12 +22,6 @@ interface FeedConfig {
   cacheKey: string;
 }
 
-function extractImagesFromContent(content: string): string[] {
-  const imgRegex = /<img.*?src="(.*?)".*?>/g;
-  const matches = [...content.matchAll(imgRegex)];
-  return matches.map(match => match[1]);
-}
-
 const FEEDS: { [key: string]: FeedConfig } = {
   ru: {
     url: "https://meduza.io/rss/all",
@@ -44,9 +38,7 @@ function formatTimeAgo(dateString: string, locale: string): string {
   return format(date, locale);
 }
 
-function ArticleDetail({ article, locale }: { article: FeedItem, locale: string }) {
-
-  const images = extractImagesFromContent(article.content);
+function ArticleDetail({ article, locale }: { article: FeedItem; locale: string }) {
   const featuredImage = article.enclosure?.url || article.icon;
 
   const markdown = `
@@ -63,15 +55,9 @@ ${stripHtml(article.content)}
       navigationTitle={article.title}
       metadata={
         <Detail.Metadata>
-
-          <Detail.Metadata.Label
-            title={article.title}
-            text={formatTimeAgo(article.pubDate, locale)}
-          />
-
+          <Detail.Metadata.Label title={article.title} text={formatTimeAgo(article.pubDate, locale)} />
 
           <Detail.Metadata.Link title="Original Article" target={article.link} text="Open in Browser" />
-
         </Detail.Metadata>
       }
       actions={
@@ -84,9 +70,8 @@ ${stripHtml(article.content)}
   );
 }
 
-
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>?/gm, '');
+  return html.replace(/<[^>]*>?/gm, "");
 }
 
 export function MeduzaFeed({ feedKey }: { feedKey: "ru" | "en" }) {
