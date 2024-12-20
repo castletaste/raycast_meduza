@@ -154,6 +154,8 @@ export function NewsSummary({ feedKey }: NewsSummaryProps): JSX.Element {
       const feed = await parser.parseString(text);
       return feed.items.map((item) => ({
         title: item.title || "",
+        link: item.link || "",
+        pubDate: item.pubDate || "",
         content: item.content || "",
       }));
     },
@@ -161,11 +163,10 @@ export function NewsSummary({ feedKey }: NewsSummaryProps): JSX.Element {
   });
 
   const newsDigest = items
-    .slice(0, 10)
-    .map((item) => `${item.title}\n${stripHtml(item.content)}`)
+    .map((item) => `${item.title}\n${item.pubDate} ${item.link}\n${stripHtml(item.content)}`)
     .join("\n\n");
 
-  const prompt = `Create a structured summary with dates and links to meduza.io of today's main news based on these articles. 
+  const prompt = `Create a structured summary with "read more" links to meduza.io and date main news based on these articles. 
        Divide by categories (politics, society, economy, etc.). 
        Use emojis for news.
        Wish a good day by summarizing at the start.
