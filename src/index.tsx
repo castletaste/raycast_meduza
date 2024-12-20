@@ -87,7 +87,11 @@ interface MeduzaFeedProps {
 }
 
 export function MeduzaFeed({ feedKey }: MeduzaFeedProps): JSX.Element {
-  const { data: items = [], isLoading, revalidate } = useFetch(FEEDS[feedKey].url, {
+  const {
+    data: items = [],
+    isLoading,
+    revalidate,
+  } = useFetch(FEEDS[feedKey].url, {
     parseResponse: async (response) => {
       const text = await response.text();
       const feed = await parser.parseString(text);
@@ -196,7 +200,10 @@ ${summary || ""}
       isLoading={isLoading || isSummaryLoading}
       actions={
         <ActionPanel>
-          <Action.Open title={feedKey === "ru" ? "Чат" : "Chat"} target={`raycast://extensions/raycast/raycast-ai/ai-chat?fallbackText=${summary}`} />
+          <Action.Open
+            title={feedKey === "ru" ? "Чат" : "Chat"}
+            target={`raycast://extensions/raycast/raycast-ai/ai-chat?fallbackText=${summary}`}
+          />
           <Action.CopyToClipboard
             content={summary || ""}
             title={feedKey === "ru" ? "Скопировать сводку" : "Copy Summary"}
