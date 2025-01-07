@@ -1,5 +1,5 @@
-import { NewsSummary } from "./index";
+// import { NewsSummary } from "./index";
 
-export default function Command() {
-  return <NewsSummary feedKey="en" />;
-}
+// export default function Command() {
+//   return <NewsSummary feedKey="en" />;
+// }
