@@ -11,7 +11,7 @@ export function NewsList(): JSX.Element {
 
     const { data: items = [], isLoading, revalidate } = useFeedData(feedKey);
 
-    const placeholder = feedKey === "ru" ? "Поиск статей..." : "Search articles...";
+    const placeholder = "Search latest articles...";
 
     return (
         <List
@@ -19,7 +19,7 @@ export function NewsList(): JSX.Element {
             searchBarPlaceholder={placeholder}
             searchBarAccessory={
                 <List.Dropdown
-                    tooltip="Выберите язык"
+                    tooltip="Select Language"
                     storeValue={true}
                     onChange={(newValue) => setLanguage(newValue as Language)}
                 >

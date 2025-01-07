@@ -19,7 +19,3 @@ export interface ArticleDetailProps {
     readonly article: FeedItem;
     readonly locale: string;
 }
-
-export interface NewsSummaryProps {
-    readonly feedKey?: Language;
-} 

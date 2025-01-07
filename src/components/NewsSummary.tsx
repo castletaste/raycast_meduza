@@ -1,10 +1,13 @@
-import { ActionPanel, Action, Detail, AI } from "@raycast/api";
-import { useAI } from "@raycast/utils";
-import { NewsSummaryProps } from "../types";
+import { ActionPanel, Action, Detail, AI, Icon } from "@raycast/api";
+import { useAI, useCachedState } from "@raycast/utils";
+import { Language } from "../types";
 import { useFeedData } from "../hooks/useFeedData";
 import { stripHtml } from "../utils/helpers";
 
-export function NewsSummary({ feedKey = "en" }: NewsSummaryProps): JSX.Element {
+export function NewsSummary(): JSX.Element {
+    const [language, setLanguage] = useCachedState<Language>("language");
+    const feedKey = language ?? "en";
+
     const { data: items = [], isLoading } = useFeedData(feedKey);
 
     const newsDigest = items
@@ -25,31 +28,31 @@ export function NewsSummary({ feedKey = "en" }: NewsSummaryProps): JSX.Element {
         stream: true,
     });
 
-    const title = feedKey === "ru" ? "Дайджест новостей" : "News Digest";
-    const loadingText = feedKey === "ru" ? "Создаю сводку событий..." : "Generating news summary...";
+    const title = "News Digest";
+    const loadingText = "Generating news summary...";
 
-    const markdown = `
-# ${title}
-${isSummaryLoading ? loadingText : ""}
+    const markdown = `${isSummaryLoading ? loadingText : ""}
 
 ${summary || ""}
   `;
 
     return (
         <Detail
+            navigationTitle={title}
             markdown={markdown}
             isLoading={isLoading || isSummaryLoading}
             actions={
                 <ActionPanel>
                     <Action.Open
-                        title={feedKey === "ru" ? "Чат" : "Chat"}
+                        title={"Chat"}
                         target={`raycast://extensions/raycast/raycast-ai/ai-chat?fallbackText=${summary}`}
                     />
                     <Action.CopyToClipboard
                         content={summary || ""}
-                        title={feedKey === "ru" ? "Скопировать сводку" : "Copy Summary"}
+                        title={"Copy Summary"}
                         shortcut={{ modifiers: ["cmd"], key: "s" }}
                     />
+                    <Action title={"Change Language"} icon={Icon.Globe} onAction={() => setLanguage(feedKey === "ru" ? "en" : "ru")} />
                 </ActionPanel>
             }
         />
