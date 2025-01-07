@@ -1,5 +1,5 @@
-import { MeduzaFeed } from "./index";
+import { NewsList } from "./index";
 
 export default function Command() {
-    return <MeduzaFeed />;
+    return <NewsList />;
 } 
