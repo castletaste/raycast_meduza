@@ -1,11 +1,11 @@
 import { ActionPanel, Action, List, Detail, Icon, AI } from "@raycast/api";
-import { useFetch, useAI } from "@raycast/utils";
+import { useFetch, useAI, useCachedState } from "@raycast/utils";
 import { format } from "timeago.js";
 import Parser from "rss-parser";
 
 const parser = new Parser();
 
-type FeedKey = "ru" | "en";
+type Language = "ru" | "en";
 
 interface FeedItem {
   readonly title: string;
@@ -20,23 +20,18 @@ interface FeedItem {
 
 interface FeedConfig {
   readonly url: string;
-  readonly locale: string;
 }
 
-const FEEDS: Record<FeedKey, FeedConfig> = {
+const FEEDS: Record<Language, FeedConfig> = {
   ru: {
     url: "https://meduza.io/rss/all",
-    locale: "ru",
   },
   en: {
     url: "https://meduza.io/rss/en/all",
-    locale: "en",
+
   },
 } as const;
 
-function formatTimeAgo(dateString: string, locale: string): string {
-  return format(new Date(dateString), locale);
-}
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>?/gm, "");
@@ -53,7 +48,7 @@ function ArticleDetail({ article, locale }: ArticleDetailProps): JSX.Element {
   const markdown = `
 ![Featured Image](${featuredImage})
 
-${formatTimeAgo(article.pubDate, locale)}
+${format(new Date(article.pubDate), locale)}
 
 ${stripHtml(article.content)}
   `;
@@ -64,7 +59,7 @@ ${stripHtml(article.content)}
       navigationTitle={article.title}
       metadata={
         <Detail.Metadata>
-          <Detail.Metadata.Label title={article.title} text={formatTimeAgo(article.pubDate, locale)} />
+          <Detail.Metadata.Label title={article.title} text={format(new Date(article.pubDate), locale)} />
           <Detail.Metadata.Link title="Original Article" target={article.link} text="Open in Browser" />
         </Detail.Metadata>
       }
@@ -82,11 +77,13 @@ ${stripHtml(article.content)}
   );
 }
 
-interface MeduzaFeedProps {
-  readonly feedKey: FeedKey;
-}
 
-export function MeduzaFeed({ feedKey }: MeduzaFeedProps): JSX.Element {
+export function MeduzaFeed(): JSX.Element {
+
+  const [language, setLanguage] = useCachedState<Language>("language");
+
+  const feedKey = language ?? "en";
+
   const {
     data: items = [],
     isLoading,
@@ -113,6 +110,16 @@ export function MeduzaFeed({ feedKey }: MeduzaFeedProps): JSX.Element {
     <List
       isLoading={isLoading}
       searchBarPlaceholder={placeholder}
+      searchBarAccessory={
+        <List.Dropdown
+          tooltip="Выберите язык"
+          storeValue={true}
+          onChange={(newValue) => setLanguage(newValue as Language)}
+        >
+          <List.Dropdown.Item title="English" value="en" />
+          <List.Dropdown.Item title="Русский" value="ru" />
+        </List.Dropdown>
+      }
       actions={
         <ActionPanel>
           <Action
@@ -129,13 +136,13 @@ export function MeduzaFeed({ feedKey }: MeduzaFeedProps): JSX.Element {
           key={item.link}
           title={item.title}
           icon={Icon.Document}
-          accessories={[{ text: formatTimeAgo(item.pubDate, FEEDS[feedKey].locale) }]}
+          accessories={[{ text: format(new Date(item.pubDate), feedKey) }]}
           actions={
             <ActionPanel>
               <Action.Push
                 title="View Article"
                 icon={Icon.Eye}
-                target={<ArticleDetail article={item} locale={FEEDS[feedKey].locale} />}
+                target={<ArticleDetail article={item} locale={feedKey} />}
               />
               <Action.OpenInBrowser url={item.link} />
               <Action.CopyToClipboard content={item.link} title="Copy Link" />
@@ -148,11 +155,11 @@ export function MeduzaFeed({ feedKey }: MeduzaFeedProps): JSX.Element {
 }
 
 interface NewsSummaryProps {
-  readonly feedKey: FeedKey;
+  readonly feedKey?: Language;
 }
 
 export function NewsSummary({ feedKey }: NewsSummaryProps): JSX.Element {
-  const { data: items = [], isLoading } = useFetch(FEEDS[feedKey].url, {
+  const { data: items = [], isLoading } = useFetch(FEEDS[feedKey ?? "en"].url, {
     parseResponse: async (response) => {
       const text = await response.text();
       const feed = await parser.parseString(text);
